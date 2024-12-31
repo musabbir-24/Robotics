@@ -14,6 +14,9 @@
 #define DATA_PIN 23
 #define CS_PIN 5
 
+// Define button pin
+#define BUTTON_PIN 15 // GPIO pin for the button
+
 // Initialize LED matrix
 MD_Parola display = MD_Parola(HARDWARE_TYPE, DATA_PIN, CLK_PIN, CS_PIN, MAX_DEVICES);
 
@@ -30,15 +33,22 @@ bool showColon = true;
 unsigned long previousMillis = 0;
 const long interval = 500; // Blink every 500ms
 
+// Intensity control variables
+int intensity = 5; // Default intensity (0-15)
+bool buttonPressed = false;
+
 void setup() {
   // Start Serial Monitor
   Serial.begin(115200);
 
   // Initialize the display
   display.begin();
-  display.setIntensity(5); // Set brightness (0-15)
+  display.setIntensity(intensity); // Set initial brightness
   display.displayClear();
   display.setTextAlignment(PA_CENTER); // Center-align the text
+
+  // Initialize the button
+  pinMode(BUTTON_PIN, INPUT_PULLUP); // Button with internal pull-up
 
   // Connect to WiFi
   WiFi.begin(ssid, password);
@@ -83,4 +93,21 @@ void loop() {
   display.print(timeString);
   display.displayAnimate();
   delay(100); // Small delay for smooth updates
+
+  // Check for button press
+  if (digitalRead(BUTTON_PIN) == LOW) { // Button pressed (active LOW)
+    if (!buttonPressed) { // Detect single press
+      buttonPressed = true;
+      changeIntensity(); // Change brightness
+    }
+  } else {
+    buttonPressed = false; // Reset button press state
+  }
+}
+
+void changeIntensity() {
+  intensity = (intensity + 1) % 16; // Cycle intensity (0-15)
+  display.setIntensity(intensity);  // Apply new intensity
+  Serial.print("Intensity set to: ");
+  Serial.println(intensity);
 }
